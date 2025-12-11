@@ -176,26 +176,17 @@ public class TransactionsController : BaseController
     /// </summary>
     [HttpGet("categories")]
     [ProducesResponseType(typeof(ApiResponse<CategoriesResponse>), StatusCodes.Status200OK)]
-    public IActionResult GetCategories()
+    [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> GetCategories()
     {
-        var categories = new CategoriesResponse
-        {
-            Categories = new[]
-            {
-                TransactionCategory.Groceries,
-                TransactionCategory.Entertainment,
-                TransactionCategory.Utilities,
-                TransactionCategory.Transportation,
-                TransactionCategory.Healthcare,
-                TransactionCategory.Shopping,
-                TransactionCategory.Dining,
-                TransactionCategory.Travel,
-                TransactionCategory.Education,
-                TransactionCategory.Other
-            }
-        };
+        var response = await _messageBus.InvokeAsync<ApiResponse<CategoriesResponse>>(new GetCategoriesQuery());
         
-        var response = ApiResponse<CategoriesResponse>.Success(categories, "Categories retrieved successfully");
+        if (!response.Successful)
+        {
+            return FailedResponse(response);
+        }
+        
         return StatusCode(response.StatusCode, response);
     }
 }

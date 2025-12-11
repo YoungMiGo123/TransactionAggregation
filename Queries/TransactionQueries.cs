@@ -25,3 +25,6 @@ public record GetCategorySummaryQuery;
 
 // Query to get source summary
 public record GetSourceSummaryQuery;
+
+// Query to get all categories
+public record GetCategoriesQuery;
