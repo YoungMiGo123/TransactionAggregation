@@ -151,8 +151,8 @@ public class TransactionApiTests : IAsyncLifetime
         result.Should().NotBeNull();
         result!.Successful.Should().BeTrue();
         result.Data.Should().NotBeNull();
-        result.Data!.Transactions.Should().NotBeEmpty();
-        result.Data.TotalCount.Should().BeGreaterThan(0);
+        result.Data!.Transactions.Payload.Should().NotBeEmpty();
+        result.Data.Transactions.TotalCount.Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -168,8 +168,8 @@ public class TransactionApiTests : IAsyncLifetime
         result.Should().NotBeNull();
         result!.Successful.Should().BeTrue();
         result.Data.Should().NotBeNull();
-        result.Data!.Transactions.Should().NotBeEmpty();
-        result.Data.Transactions.Should().AllSatisfy(t => t.CustomerId.Should().Be("CUST-001"));
+        result.Data!.Transactions.Payload.Should().NotBeEmpty();
+        result.Data.Transactions.Payload.Should().AllSatisfy(t => t.CustomerId.Should().Be("CUST-001"));
     }
 
     [Fact]
@@ -185,8 +185,8 @@ public class TransactionApiTests : IAsyncLifetime
         result.Should().NotBeNull();
         result!.Successful.Should().BeTrue();
         result.Data.Should().NotBeNull();
-        result.Data!.Transactions.Should().NotBeEmpty();
-        result.Data.Transactions.Should().AllSatisfy(t => t.Category.Should().Be(TransactionCategory.Groceries));
+        result.Data!.Transactions.Payload.Should().NotBeEmpty();
+        result.Data.Transactions.Payload.Should().AllSatisfy(t => t.Category.Should().Be(TransactionCategory.Groceries));
     }
 
     [Fact]

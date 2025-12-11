@@ -11,7 +11,7 @@ public class TransactionModelTests
     public void Transaction_DefaultValues_AreSetCorrectly()
     {
         // Arrange & Act
-        var transaction = new Transaction();
+        var transaction = new Transaction() { Id = Guid.NewGuid() };
 
         // Assert
         transaction.Id.Should().NotBe(Guid.Empty);
@@ -69,7 +69,7 @@ public class CustomerModelTests
     public void Customer_DefaultValues_AreSetCorrectly()
     {
         // Arrange & Act
-        var customer = new Customer();
+        var customer = new Customer() { Id = Guid.NewGuid() };
 
         // Assert
         customer.Id.Should().NotBe(Guid.Empty);
@@ -104,7 +104,7 @@ public class CategoryModelTests
     public void Category_DefaultValues_AreSetCorrectly()
     {
         // Arrange & Act
-        var category = new Category();
+        var category = new Category(){ Id = Guid.NewGuid() };
 
         // Assert
         category.Id.Should().NotBe(Guid.Empty);
