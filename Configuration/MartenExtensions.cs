@@ -48,5 +48,26 @@ public static class MartenExtensions
             .Duplicate(x => x.Currency)
             .Duplicate(x => x.Type)
             .Duplicate(x => x.Description);
+
+        // Customer indexes
+        options.Schema.For<Customer>()
+            .Identity(x => x.Id)
+            .Index(x => x.CustomerId)
+            .Index(x => x.Email)
+            .Duplicate(x => x.Name);
+
+        // Category indexes
+        options.Schema.For<Category>()
+            .Identity(x => x.Id)
+            .Index(x => x.Name)
+            .Duplicate(x => x.Description);
+
+        // CategoryRule indexes
+        options.Schema.For<CategoryRule>()
+            .Identity(x => x.Id)
+            .Index(x => x.CategoryId)
+            .Index(x => x.Keyword)
+            .Index(x => x.Priority)
+            .Duplicate(x => x.CategoryName);
     }
 }

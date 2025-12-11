@@ -17,9 +17,11 @@ builder.Host.UseWolverine();
 
 // Register services
 builder.Services.AddSingleton<ICategorizationService, CategorizationService>();
+builder.Services.AddSingleton<IRuleBasedCategorizer, RuleBasedCategorizer>();
 
-// Register background service for data seeding
+// Register background services for data seeding and categorization
 builder.Services.AddHostedService<DataSeedingService>();
+builder.Services.AddHostedService<TransactionCategorizationService>();
 
 // Add CORS for development
 builder.Services.AddCors(options =>

@@ -37,15 +37,21 @@ public class DataSeedingService : BackgroundService
         {
             using var scope = _serviceProvider.CreateScope();
             var documentStore = scope.ServiceProvider.GetRequiredService<IDocumentStore>();
-            var categorizationService = scope.ServiceProvider.GetRequiredService<ICategorizationService>();
+            var categorizer = scope.ServiceProvider.GetRequiredService<IRuleBasedCategorizer>();
 
             await using var session = documentStore.LightweightSession();
 
-            // Check if data already exists
+            // Seed customers first
+            await SeedCustomersAsync(session, stoppingToken);
+
+            // Seed categories and rules
+            await SeedCategoriesAndRulesAsync(session, stoppingToken);
+
+            // Check if transactions already exist
             var existingCount = await session.Query<Transaction>().CountAsync(stoppingToken);
             if (existingCount > 0)
             {
-                _logger.LogInformation("Database already contains {Count} transactions. Skipping seed", existingCount);
+                _logger.LogInformation("Database already contains {Count} transactions. Skipping transaction seed", existingCount);
                 return;
             }
 
@@ -53,13 +59,13 @@ public class DataSeedingService : BackgroundService
             var allTransactions = new List<Transaction>();
 
             // Generate from Bank System
-            allTransactions.AddRange(GenerateBankTransactions(categorizationService));
+            allTransactions.AddRange(await GenerateBankTransactionsAsync(session, categorizer, stoppingToken));
 
             // Generate from Credit Card System
-            allTransactions.AddRange(GenerateCreditCardTransactions(categorizationService));
+            allTransactions.AddRange(await GenerateCreditCardTransactionsAsync(session, categorizer, stoppingToken));
 
             // Generate from Payment Processor
-            allTransactions.AddRange(GeneratePaymentProcessorTransactions(categorizationService));
+            allTransactions.AddRange(await GeneratePaymentProcessorTransactionsAsync(session, categorizer, stoppingToken));
 
             _logger.LogInformation("Generated {Count} transactions. Storing in database...", allTransactions.Count);
 
@@ -75,10 +81,138 @@ public class DataSeedingService : BackgroundService
         }
     }
 
-    private List<Transaction> GenerateBankTransactions(ICategorizationService categorizationService)
+    private async Task SeedCustomersAsync(IDocumentSession session, CancellationToken stoppingToken)
     {
-        var customerIds = new[] { "CUST-001", "CUST-002", "CUST-003", "CUST-004", "CUST-005", 
-                                  "CUST-006", "CUST-007", "CUST-008", "CUST-009", "CUST-010" };
+        var existingCustomers = await session.Query<Customer>().CountAsync(stoppingToken);
+        if (existingCustomers > 0)
+        {
+            _logger.LogInformation("Customers already seeded. Skipping.");
+            return;
+        }
+
+        var customers = new List<Customer>
+        {
+            new Customer { CustomerId = "CUST-001", Name = "John Doe", Email = "john.doe@example.com" },
+            new Customer { CustomerId = "CUST-002", Name = "Jane Smith", Email = "jane.smith@example.com" },
+            new Customer { CustomerId = "CUST-003", Name = "Bob Johnson", Email = "bob.johnson@example.com" },
+            new Customer { CustomerId = "CUST-004", Name = "Alice Williams", Email = "alice.williams@example.com" },
+            new Customer { CustomerId = "CUST-005", Name = "Charlie Brown", Email = "charlie.brown@example.com" },
+            new Customer { CustomerId = "CUST-006", Name = "Diana Prince", Email = "diana.prince@example.com" },
+            new Customer { CustomerId = "CUST-007", Name = "Edward Norton", Email = "edward.norton@example.com" },
+            new Customer { CustomerId = "CUST-008", Name = "Fiona Green", Email = "fiona.green@example.com" },
+            new Customer { CustomerId = "CUST-009", Name = "George Miller", Email = "george.miller@example.com" },
+            new Customer { CustomerId = "CUST-010", Name = "Hannah Davis", Email = "hannah.davis@example.com" }
+        };
+
+        session.Store(customers.ToArray());
+        await session.SaveChangesAsync(stoppingToken);
+        _logger.LogInformation("Seeded {Count} customers", customers.Count);
+    }
+
+    private async Task SeedCategoriesAndRulesAsync(IDocumentSession session, CancellationToken stoppingToken)
+    {
+        var existingCategories = await session.Query<Category>().CountAsync(stoppingToken);
+        if (existingCategories > 0)
+        {
+            _logger.LogInformation("Categories already seeded. Skipping.");
+            return;
+        }
+
+        var categories = new List<Category>
+        {
+            new Category
+            {
+                Name = TransactionCategory.Groceries,
+                Description = "Grocery stores and supermarkets",
+                Keywords = new List<string> { "walmart", "target", "grocery", "supermarket", "safeway", "kroger", "whole foods" }
+            },
+            new Category
+            {
+                Name = TransactionCategory.Entertainment,
+                Description = "Entertainment and streaming services",
+                Keywords = new List<string> { "netflix", "spotify", "hulu", "disney", "hbo", "theater", "cinema", "movie" }
+            },
+            new Category
+            {
+                Name = TransactionCategory.Utilities,
+                Description = "Utility bills and services",
+                Keywords = new List<string> { "electric", "water", "gas", "internet", "phone", "utility", "bill" }
+            },
+            new Category
+            {
+                Name = TransactionCategory.Transportation,
+                Description = "Transportation and fuel",
+                Keywords = new List<string> { "uber", "lyft", "gas station", "shell", "exxon", "chevron", "parking", "transit" }
+            },
+            new Category
+            {
+                Name = TransactionCategory.Healthcare,
+                Description = "Healthcare and medical services",
+                Keywords = new List<string> { "pharmacy", "cvs", "walgreens", "hospital", "clinic", "doctor", "medical", "health" }
+            },
+            new Category
+            {
+                Name = TransactionCategory.Shopping,
+                Description = "Shopping and retail",
+                Keywords = new List<string> { "amazon", "ebay", "clothing", "h&m", "zara", "store", "mall" }
+            },
+            new Category
+            {
+                Name = TransactionCategory.Dining,
+                Description = "Restaurants and food services",
+                Keywords = new List<string> { "restaurant", "cafe", "bistro", "diner", "pizza", "burger", "starbucks", "coffee" }
+            },
+            new Category
+            {
+                Name = TransactionCategory.Travel,
+                Description = "Travel and accommodation",
+                Keywords = new List<string> { "flight", "hotel", "airline", "marriott", "hilton", "booking", "airbnb", "travel" }
+            },
+            new Category
+            {
+                Name = TransactionCategory.Education,
+                Description = "Education and learning",
+                Keywords = new List<string> { "course", "udemy", "coursera", "school", "university", "tuition", "education", "learning" }
+            },
+            new Category
+            {
+                Name = TransactionCategory.Other,
+                Description = "Other uncategorized transactions",
+                Keywords = new List<string>()
+            }
+        };
+
+        session.Store(categories.ToArray());
+        await session.SaveChangesAsync(stoppingToken);
+        _logger.LogInformation("Seeded {Count} categories", categories.Count);
+
+        // Now create category rules
+        var rules = new List<CategoryRule>();
+        var priority = 100;
+
+        foreach (var category in categories.Where(c => c.Keywords.Any()))
+        {
+            foreach (var keyword in category.Keywords)
+            {
+                rules.Add(new CategoryRule
+                {
+                    CategoryId = category.Id,
+                    CategoryName = category.Name,
+                    Keyword = keyword,
+                    Priority = priority--
+                });
+            }
+        }
+
+        session.Store(rules.ToArray());
+        await session.SaveChangesAsync(stoppingToken);
+        _logger.LogInformation("Seeded {Count} category rules", rules.Count);
+    }
+
+    private async Task<List<Transaction>> GenerateBankTransactionsAsync(IDocumentSession session, IRuleBasedCategorizer categorizer, CancellationToken stoppingToken)
+    {
+        var customers = await session.Query<Customer>().Where(c => !c.IsDeleted).ToListAsync(stoppingToken);
+        var customerIds = customers.Select(c => c.CustomerId).ToArray();
         
         var groceryStores = new[] { "Walmart Supercenter", "Target", "Kroger", "Safeway", "Whole Foods", "Trader Joe's" };
         var utilities = new[] { "Electric Company", "Water Utility", "Gas Company", "Internet Provider", "Phone Company" };
@@ -115,19 +249,19 @@ public class DataSeedingService : BackgroundService
 
         var transactions = faker.Generate(500);
 
-        // Categorize all transactions
+        // Categorize all transactions using the rule-based categorizer
         foreach (var transaction in transactions)
         {
-            transaction.Category = categorizationService.CategorizeTransaction(transaction);
+            transaction.Category = await categorizer.CategorizeTransactionAsync(transaction);
         }
 
         return transactions;
     }
 
-    private List<Transaction> GenerateCreditCardTransactions(ICategorizationService categorizationService)
+    private async Task<List<Transaction>> GenerateCreditCardTransactionsAsync(IDocumentSession session, IRuleBasedCategorizer categorizer, CancellationToken stoppingToken)
     {
-        var customerIds = new[] { "CUST-001", "CUST-002", "CUST-003", "CUST-004", "CUST-005", 
-                                  "CUST-006", "CUST-007", "CUST-008", "CUST-009", "CUST-010" };
+        var customers = await session.Query<Customer>().Where(c => !c.IsDeleted).ToListAsync(stoppingToken);
+        var customerIds = customers.Select(c => c.CustomerId).ToArray();
         
         var onlineStores = new[] { "Amazon.com", "eBay", "Etsy", "Best Buy Online", "Walmart.com", "Target.com" };
         var restaurants = new[] { "Italian Bistro", "Sushi Restaurant", "Steakhouse", "Pizza Place", "Mexican Grill", "Chinese Restaurant" };
@@ -164,19 +298,19 @@ public class DataSeedingService : BackgroundService
 
         var transactions = faker.Generate(400);
 
-        // Categorize all transactions
+        // Categorize all transactions using the rule-based categorizer
         foreach (var transaction in transactions)
         {
-            transaction.Category = categorizationService.CategorizeTransaction(transaction);
+            transaction.Category = await categorizer.CategorizeTransactionAsync(transaction);
         }
 
         return transactions;
     }
 
-    private List<Transaction> GeneratePaymentProcessorTransactions(ICategorizationService categorizationService)
+    private async Task<List<Transaction>> GeneratePaymentProcessorTransactionsAsync(IDocumentSession session, IRuleBasedCategorizer categorizer, CancellationToken stoppingToken)
     {
-        var customerIds = new[] { "CUST-001", "CUST-002", "CUST-003", "CUST-004", "CUST-005", 
-                                  "CUST-006", "CUST-007", "CUST-008", "CUST-009", "CUST-010" };
+        var customers = await session.Query<Customer>().Where(c => !c.IsDeleted).ToListAsync(stoppingToken);
+        var customerIds = customers.Select(c => c.CustomerId).ToArray();
         
         var educationPlatforms = new[] { "Udemy", "Coursera", "LinkedIn Learning", "Skillshare", "Pluralsight" };
         var hotels = new[] { "Marriott Hotel", "Hilton", "Holiday Inn", "Best Western", "Hyatt", "Airbnb Rental" };
@@ -211,10 +345,10 @@ public class DataSeedingService : BackgroundService
 
         var transactions = faker.Generate(350);
 
-        // Categorize all transactions
+        // Categorize all transactions using the rule-based categorizer
         foreach (var transaction in transactions)
         {
-            transaction.Category = categorizationService.CategorizeTransaction(transaction);
+            transaction.Category = await categorizer.CategorizeTransactionAsync(transaction);
         }
 
         return transactions;
