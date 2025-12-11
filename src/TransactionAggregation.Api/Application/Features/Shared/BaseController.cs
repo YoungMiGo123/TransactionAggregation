@@ -5,14 +5,33 @@ namespace TransactionAggregation.API.Application.Features.Shared;
 
 public class BaseController : ControllerBase
 {
+    protected string GetCorrelationId()
+    {
+        return HttpContext.Items["CorrelationId"]?.ToString() ?? Guid.NewGuid().ToString();
+    }
+
+    protected void AttachCorrelationId<T>(ApiResponse<T> response)
+    {
+        response.CorrelationId = GetCorrelationId();
+        response.Timestamp = DateTime.UtcNow;
+    }
+
     public IActionResult FailedResponse<T>(ApiResponse<T> response)
     {
+        AttachCorrelationId(response);
+        
         return response.StatusCode switch
         {
-            404 => NotFound(response.Message),
-            400 => BadRequest(response.Message),
-            401 => Unauthorized(response.Message),
-            _ => StatusCode(500, response.Message)
+            404 => NotFound(response),
+            400 => BadRequest(response),
+            401 => Unauthorized(response),
+            _ => StatusCode(500, response)
         };
+    }
+
+    protected IActionResult SuccessResponse<T>(ApiResponse<T> response)
+    {
+        AttachCorrelationId(response);
+        return StatusCode(response.StatusCode, response);
     }
 }

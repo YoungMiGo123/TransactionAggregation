@@ -1,7 +1,7 @@
 using Marten;
-using TransactionAggregation.API.Models;
+using TransactionAggregation.API.Application.Core.Entities;
 
-namespace TransactionAggregation.API.Configuration;
+namespace TransactionAggregation.API.Application.Extensions;
 
 public static class MartenExtensions
 {

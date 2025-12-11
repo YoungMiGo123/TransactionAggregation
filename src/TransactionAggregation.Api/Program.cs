@@ -1,13 +1,14 @@
-using TransactionAggregation.API.Configuration;
+using TransactionAggregation.API.Application.Extensions;
+using TransactionAggregation.API.Application.Middleware;
 using TransactionAggregation.API.Services;
-using TransactionAggregation.API.BackgroundServices;
 using Wolverine;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
-builder.Services.AddOpenApi();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 // Configure Marten for data persistence
 builder.Services.AddMartenConfiguration(builder.Configuration);
@@ -20,8 +21,8 @@ builder.Services.AddSingleton<ICategorizationService, CategorizationService>();
 builder.Services.AddSingleton<IRuleBasedCategorizer, RuleBasedCategorizer>();
 
 // Register background services for data seeding and categorization
-builder.Services.AddHostedService<DataSeedingService>();
-builder.Services.AddHostedService<TransactionCategorizationService>();
+//builder.Services.AddHostedService<DataSeedingService>();
+//builder.Services.AddHostedService<TransactionCategorizationService>();
 
 // Add CORS for development
 builder.Services.AddCors(options =>
@@ -36,10 +37,17 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Add correlation ID middleware first to ensure all requests have a correlation ID
+app.UseCorrelationId();
+
+// Add global exception handler middleware early in the pipeline
+app.UseGlobalExceptionHandler();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();
@@ -48,6 +56,3 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-
-// Make the Program class accessible to tests
-public partial class Program { }

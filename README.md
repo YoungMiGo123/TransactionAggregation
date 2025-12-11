@@ -318,7 +318,7 @@ All API responses are wrapped in the `ApiResponse<T>` model:
   "description": "string",
   "category": "string",
   "source": "string",
-  "currency": "USD",
+  "currency": "ZAR",
   "type": "Debit/Credit",
   "createdAt": "datetime",
   "updatedAt": "datetime",

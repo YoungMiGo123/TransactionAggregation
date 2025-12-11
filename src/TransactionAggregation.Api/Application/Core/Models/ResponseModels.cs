@@ -1,9 +1,10 @@
-namespace TransactionAggregation.API.Models;
+using TransactionAggregation.API.Application.Core.Entities;
+
+namespace TransactionAggregation.API.Application.Core.Models;
 
 public class TransactionsResponse
 {
-    public IEnumerable<Transaction> Transactions { get; set; } = new List<Transaction>();
-    public int TotalCount { get; set; }
+    public PaginationResponse<Transaction> Transactions { get; set; } 
 }
 
 public class CategoriesResponse

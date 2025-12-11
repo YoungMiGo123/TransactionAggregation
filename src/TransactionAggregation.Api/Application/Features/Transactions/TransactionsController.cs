@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using TransactionAggregation.API.Application.Core.Models;
 using TransactionAggregation.API.Application.Features.Shared;
-using TransactionAggregation.API.Queries;
+using TransactionAggregation.API.Application.Features.Transactions.Handlers;
 using Wolverine;
 
 namespace TransactionAggregation.API.Application.Features.Transactions;
@@ -11,22 +11,56 @@ namespace TransactionAggregation.API.Application.Features.Transactions;
 public class TransactionsController(IMessageBus messageBus) : BaseController
 {
     /// <summary>
-    /// Get all transactions from all data sources
+    /// Find transactions by multiple search criteria (at least one required)
     /// </summary>
-    [HttpGet]
+    /// <remarks>
+    /// Search transactions using one or more of the following criteria:
+    /// - Id: Exact transaction ID match
+    /// - CustomerId: Exact customer ID match
+    /// - CustomerName: Partial name match (contains)
+    /// - MinAmount/MaxAmount: Amount range filter
+    /// - StartDate/EndDate: Date range filter
+    /// - Description: Partial description match (contains)
+    /// - Category: Exact category match
+    /// - Source: Exact source match
+    /// - Currency: Exact currency match
+    /// - Type: Exact type match (Debit/Credit)
+    /// 
+    /// At least one search criterion must be provided.
+    /// </remarks>
+    [HttpGet("find")]
     [ProducesResponseType(typeof(ApiResponse<TransactionsResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetAllTransactions()
+    public async Task<IActionResult> FindTransactions([FromQuery] FindTransactionsQuery query)
     {
-        var response = await messageBus.InvokeAsync<ApiResponse<TransactionsResponse>>(new GetAllTransactionsQuery());
+        var response = await messageBus.InvokeAsync<ApiResponse<TransactionsResponse>>(query);
         
         if (!response.Successful)
         {
             return FailedResponse(response);
         }
         
-        return StatusCode(response.StatusCode, response);
+        return SuccessResponse(response);
+    }
+
+    /// <summary>
+    /// Get all transactions from all data sources
+    /// </summary>
+    [HttpGet]
+    [ProducesResponseType(typeof(ApiResponse<TransactionsResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> GetAllTransactions([FromQuery] GetAllTransactionsQuery query)
+    {
+        var response = await messageBus.InvokeAsync<ApiResponse<TransactionsResponse>>(query);
+        
+        if (!response.Successful)
+        {
+            return FailedResponse(response);
+        }
+        
+        return SuccessResponse(response);
     }
 
     /// <summary>
@@ -36,16 +70,22 @@ public class TransactionsController(IMessageBus messageBus) : BaseController
     [ProducesResponseType(typeof(ApiResponse<TransactionsResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetTransactionsByCustomer(string customerId)
+    public async Task<IActionResult> GetTransactionsByCustomer(string customerId, [FromQuery] int pageNo = 1, [FromQuery] int pageSize = 20)
     {
-        var response = await messageBus.InvokeAsync<ApiResponse<TransactionsResponse>>(new GetTransactionsByCustomerQuery(customerId));
+        var query = new GetTransactionsByCustomerQuery
+        {
+            PageNo = pageNo,
+            PageSize = pageSize,
+            CustomerId = customerId
+        };
+        var response = await messageBus.InvokeAsync<ApiResponse<TransactionsResponse>>(query);
         
         if (!response.Successful)
         {
             return FailedResponse(response);
         }
         
-        return StatusCode(response.StatusCode, response);
+        return SuccessResponse(response);
     }
 
     /// <summary>
@@ -55,16 +95,22 @@ public class TransactionsController(IMessageBus messageBus) : BaseController
     [ProducesResponseType(typeof(ApiResponse<TransactionsResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetTransactionsByCategory(string category)
+    public async Task<IActionResult> GetTransactionsByCategory(string category, [FromQuery] int pageNo = 1, [FromQuery] int pageSize = 20)
     {
-        var response = await messageBus.InvokeAsync<ApiResponse<TransactionsResponse>>(new GetTransactionsByCategoryQuery(category));
+        var query = new GetTransactionsByCategoryQuery
+        {
+            PageNo = pageNo,
+            PageSize = pageSize,
+            Category = category
+        };
+        var response = await messageBus.InvokeAsync<ApiResponse<TransactionsResponse>>(query);
         
         if (!response.Successful)
         {
             return FailedResponse(response);
         }
         
-        return StatusCode(response.StatusCode, response);
+        return SuccessResponse(response);
     }
 
     /// <summary>
@@ -75,17 +121,16 @@ public class TransactionsController(IMessageBus messageBus) : BaseController
     [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> GetTransactionsByDateRange(
-        [FromQuery] DateTime startDate, 
-        [FromQuery] DateTime endDate)
+       [FromQuery] GetTransactionsByDateRangeQuery query)
     {
-        var response = await messageBus.InvokeAsync<ApiResponse<TransactionsResponse>>(new GetTransactionsByDateRangeQuery(startDate, endDate));
+        var response = await messageBus.InvokeAsync<ApiResponse<TransactionsResponse>>(query);
         
         if (!response.Successful)
         {
             return FailedResponse(response);
         }
         
-        return StatusCode(response.StatusCode, response);
+        return SuccessResponse(response);
     }
 
     /// <summary>
@@ -95,16 +140,23 @@ public class TransactionsController(IMessageBus messageBus) : BaseController
     [ProducesResponseType(typeof(ApiResponse<TransactionsResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> GetTransactionsBySource(string source)
+    public async Task<IActionResult> GetTransactionsBySource(string source, [FromQuery] int pageNo = 1, [FromQuery] int pageSize = 20)
     {
-        var response = await messageBus.InvokeAsync<ApiResponse<TransactionsResponse>>(new GetTransactionsBySourceQuery(source));
+        var query = new GetTransactionsBySourceQuery
+        {
+            PageNo = pageNo,
+            PageSize = pageSize,
+            Source = source
+        };
+        
+        var response = await messageBus.InvokeAsync<ApiResponse<TransactionsResponse>>(query);
         
         if (!response.Successful)
         {
             return FailedResponse(response);
         }
         
-        return StatusCode(response.StatusCode, response);
+        return SuccessResponse(response);
     }
 
     /// <summary>
@@ -124,7 +176,7 @@ public class TransactionsController(IMessageBus messageBus) : BaseController
             return FailedResponse(response);
         }
         
-        return StatusCode(response.StatusCode, response);
+        return SuccessResponse(response);
     }
 
     /// <summary>
@@ -143,7 +195,7 @@ public class TransactionsController(IMessageBus messageBus) : BaseController
             return FailedResponse(response);
         }
         
-        return StatusCode(response.StatusCode, response);
+        return SuccessResponse(response);
     }
 
     /// <summary>
@@ -162,7 +214,7 @@ public class TransactionsController(IMessageBus messageBus) : BaseController
             return FailedResponse(response);
         }
         
-        return StatusCode(response.StatusCode, response);
+        return SuccessResponse(response);
     }
 
     /// <summary>
@@ -181,6 +233,6 @@ public class TransactionsController(IMessageBus messageBus) : BaseController
             return FailedResponse(response);
         }
         
-        return StatusCode(response.StatusCode, response);
+        return SuccessResponse(response);
     }
 }

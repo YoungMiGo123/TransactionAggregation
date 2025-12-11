@@ -29,7 +29,7 @@ public class BankDataSource : ITransactionDataSource
             .RuleFor(t => t.CustomerName, f => f.Name.FullName())
             .RuleFor(t => t.TransactionDate, f => f.Date.Between(DateTime.Now.AddDays(-90), DateTime.Now))
             .RuleFor(t => t.Source, f => SourceName)
-            .RuleFor(t => t.Currency, f => "USD")
+            .RuleFor(t => t.Currency, f => "ZAR")
             .RuleFor(t => t.Category, f => string.Empty)
             .RuleFor(t => t.Type, (f, t) => t.Amount > 0 ? "Credit" : "Debit")
             .RuleFor(t => t.Amount, f => f.Random.Bool(0.2f) ? 

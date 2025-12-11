@@ -1,4 +1,4 @@
-namespace TransactionAggregation.API.Models;
+namespace TransactionAggregation.API.Application.Core.Models;
 
 public class ApiResponse<T>
 {
@@ -6,7 +6,9 @@ public class ApiResponse<T>
     public string Message { get; set; } = string.Empty;
     public T? Data { get; set; }
     public int StatusCode { get; set; } = StatusCodes.Status200OK;
-    public List<string> Errors { get; set; } = new();
+    public List<string>? Errors { get; set; } = new();
+    public string? CorrelationId { get; set; }
+    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 
     public static ApiResponse<T> Success(T data, string message = "Operation successful")
     {
@@ -26,7 +28,7 @@ public class ApiResponse<T>
             Successful = false,
             Message = message,
             StatusCode = statusCode,
-            Errors = new List<string> { message }
+            Errors = [message]
         };
     }
 
