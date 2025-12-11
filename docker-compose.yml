@@ -24,7 +24,7 @@ services:
   # Transaction Aggregation API
   api:
     build:
-      context: .
+      context: ./src/TransactionAggregation.Api
       dockerfile: Dockerfile
     container_name: transaction-api
     environment:

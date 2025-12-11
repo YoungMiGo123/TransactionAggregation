@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\TransactionAggregation.API.csproj" />
+    <ProjectReference Include="..\..\src\TransactionAggregation.Api\TransactionAggregation.API.csproj" />
   </ItemGroup>
 
 </Project>

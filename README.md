@@ -2,6 +2,32 @@
 
 A .NET-based system that aggregates customer financial transaction data from multiple mock data sources and categorizes the transactions. It provides an extensive API for retrieving aggregated information.
 
+## Project Structure
+
+```
+TransactionAggregation/
+├── TransactionAggregation.sln          # Solution file
+├── docker-compose.yml                   # Docker Compose configuration
+├── README.md                            # This file
+├── src/                                 # Source code
+│   └── TransactionAggregation.Api/     # Web API project
+│       ├── BackgroundServices/          # Background services
+│       ├── Configuration/               # Configuration extensions
+│       ├── Controllers/                 # API controllers
+│       ├── DataSources/                 # Mock data generators
+│       ├── Models/                      # Domain and response models
+│       ├── Queries/                     # Query definitions and handlers
+│       ├── Services/                    # Business logic services
+│       ├── Program.cs                   # Application entry point
+│       ├── Dockerfile                   # Docker configuration
+│       └── appsettings.json            # Application settings
+└── tests/                               # Tests
+    └── TransactionAggregation.Tests/   # Test project
+        ├── UnitTests/                   # Unit tests
+        ├── IntegrationTests/            # Integration tests
+        └── README.md                    # Test documentation
+```
+
 ## Features
 
 - **Multiple Data Sources**: Integrates with mock Bank System, Credit Card System, and Payment Processor
@@ -11,6 +37,7 @@ A .NET-based system that aggregates customer financial transaction data from mul
 - **Rich Query API**: Extensive API endpoints for querying and aggregating transaction data
 - **Wolverine Mediator**: Uses Wolverine for CQRS pattern implementation
 - **Consistent Response Model**: All API responses wrapped in `ApiResponse<T>` for consistent error handling
+- **Comprehensive Testing**: 39 tests covering unit and integration scenarios
 
 ## Tech Stack
 
@@ -21,6 +48,7 @@ A .NET-based system that aggregates customer financial transaction data from mul
 - **PostgreSQL** - Database
 - **ASP.NET Core Web API**
 - **Docker & Docker Compose** - Containerization
+- **xUnit, FluentAssertions, Testcontainers** - Testing
 
 ## Quick Start with Docker Compose
 
@@ -104,7 +132,7 @@ environment:
 
 ### Configuration
 
-Update `appsettings.json`:
+Update `src/TransactionAggregation.Api/appsettings.json`:
 
 ```json
 {
@@ -122,9 +150,19 @@ Update `appsettings.json`:
 ### Running the Application
 
 ```bash
+# From repository root
 dotnet restore
 dotnet build
+cd src/TransactionAggregation.Api
 dotnet run
+```
+
+Or using the solution file:
+
+```bash
+# From repository root
+dotnet build TransactionAggregation.sln
+dotnet run --project src/TransactionAggregation.Api/TransactionAggregation.API.csproj
 ```
 
 The API will be available at `https://localhost:5001` or `http://localhost:5000`
@@ -354,23 +392,29 @@ The project includes comprehensive unit and integration tests.
 
 **Run all tests:**
 ```bash
-cd TransactionAggregation.Tests
+# From repository root
+dotnet test TransactionAggregation.sln
+```
+
+Or run from test project:
+```bash
+cd tests/TransactionAggregation.Tests
 dotnet test
 ```
 
 **Run with detailed output:**
 ```bash
-dotnet test --logger "console;verbosity=detailed"
+dotnet test TransactionAggregation.sln --logger "console;verbosity=detailed"
 ```
 
 **Run only unit tests:**
 ```bash
-dotnet test --filter FullyQualifiedName~UnitTests
+dotnet test TransactionAggregation.sln --filter FullyQualifiedName~UnitTests
 ```
 
 **Run only integration tests (requires Docker):**
 ```bash
-dotnet test --filter FullyQualifiedName~IntegrationTests
+dotnet test TransactionAggregation.sln --filter FullyQualifiedName~IntegrationTests
 ```
 
 **Test Coverage:**
@@ -379,15 +423,15 @@ dotnet test --filter FullyQualifiedName~IntegrationTests
 - Full API endpoint testing
 - Total: 39 tests, ~32-40s execution time
 
-See [TransactionAggregation.Tests/README.md](TransactionAggregation.Tests/README.md) for detailed test documentation.
+See [tests/TransactionAggregation.Tests/README.md](tests/TransactionAggregation.Tests/README.md) for detailed test documentation.
 
 ### Adding New Categories
 
-Update `TransactionCategory.cs` and add keyword mappings via the database by seeding new `Category` and `CategoryRule` entities.
+Update `TransactionCategory.cs` and add keyword mappings via the database by seeding new `Category` and `CategoryRule` entities in `src/TransactionAggregation.Api/BackgroundServices/DataSeedingService.cs`.
 
 ### Configuring Data Generation
 
-Modify `DataSeedingService.cs` to adjust:
+Modify `src/TransactionAggregation.Api/BackgroundServices/DataSeedingService.cs` to adjust:
 - Number of transactions per source
 - Customer IDs
 - Date ranges
