@@ -15,10 +15,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="Tests\**" />
-    <Content Remove="Tests\**" />
-    <EmbeddedResource Remove="Tests\**" />
-    <None Remove="Tests\**" />
+    <Compile Remove="TransactionAggregation.Tests\**" />
+    <Content Remove="TransactionAggregation.Tests\**" />
+    <EmbeddedResource Remove="TransactionAggregation.Tests\**" />
+    <None Remove="TransactionAggregation.Tests\**" />
   </ItemGroup>
 
 </Project>

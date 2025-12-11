@@ -16,8 +16,15 @@ obj/
 *.swp
 *~
 
-## Tests
-Tests/
+## Tests - exclude only generated test files in main project
+Tests/bin/
+Tests/obj/
+
+## Test Results
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
 
 ## OS
 .DS_Store

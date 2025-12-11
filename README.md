@@ -348,6 +348,39 @@ The system uses Marten document database with the following collections:
 
 ## Development
 
+### Running Tests
+
+The project includes comprehensive unit and integration tests.
+
+**Run all tests:**
+```bash
+cd TransactionAggregation.Tests
+dotnet test
+```
+
+**Run with detailed output:**
+```bash
+dotnet test --logger "console;verbosity=detailed"
+```
+
+**Run only unit tests:**
+```bash
+dotnet test --filter FullyQualifiedName~UnitTests
+```
+
+**Run only integration tests (requires Docker):**
+```bash
+dotnet test --filter FullyQualifiedName~IntegrationTests
+```
+
+**Test Coverage:**
+- 21 unit tests covering categorization logic and models
+- 18 integration tests with real PostgreSQL database
+- Full API endpoint testing
+- Total: 39 tests, ~32-40s execution time
+
+See [TransactionAggregation.Tests/README.md](TransactionAggregation.Tests/README.md) for detailed test documentation.
+
 ### Adding New Categories
 
 Update `TransactionCategory.cs` and add keyword mappings via the database by seeding new `Category` and `CategoryRule` entities.
