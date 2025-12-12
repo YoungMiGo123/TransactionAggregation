@@ -8,20 +8,13 @@ using Xunit;
 namespace TransactionAggregation.Tests.IntegrationTests;
 
 [Collection("Database collection")]
-public class TransactionRepositoryTests
+public class TransactionRepositoryTests(DatabaseFixture fixture)
 {
-    private readonly DatabaseFixture _fixture;
-
-    public TransactionRepositoryTests(DatabaseFixture fixture)
-    {
-        _fixture = fixture;
-    }
-
     [Fact]
     public async Task CanStoreAndRetrieveTransaction()
     {
         // Arrange
-        var serviceProvider = _fixture.CreateServiceProvider();
+        var serviceProvider = fixture.CreateServiceProvider();
         var documentStore = serviceProvider.GetRequiredService<IDocumentStore>();
 
         var transaction = new Transaction
@@ -61,7 +54,7 @@ public class TransactionRepositoryTests
     public async Task CanQueryTransactionsByCustomerId()
     {
         // Arrange
-        var serviceProvider = _fixture.CreateServiceProvider();
+        var serviceProvider = fixture.CreateServiceProvider();
         var documentStore = serviceProvider.GetRequiredService<IDocumentStore>();
 
         var transactions = new[]
@@ -94,7 +87,7 @@ public class TransactionRepositoryTests
     public async Task CanQueryTransactionsByCategory()
     {
         // Arrange
-        var serviceProvider = _fixture.CreateServiceProvider();
+        var serviceProvider = fixture.CreateServiceProvider();
         var documentStore = serviceProvider.GetRequiredService<IDocumentStore>();
 
         var transactions = new[]
@@ -127,7 +120,7 @@ public class TransactionRepositoryTests
     public async Task SoftDelete_ExcludesTransactionFromQueries()
     {
         // Arrange
-        var serviceProvider = _fixture.CreateServiceProvider();
+        var serviceProvider = fixture.CreateServiceProvider();
         var documentStore = serviceProvider.GetRequiredService<IDocumentStore>();
 
         var transaction = new Transaction

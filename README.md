@@ -10,22 +10,49 @@ TransactionAggregation/
 ├── docker-compose.yml                   # Docker Compose configuration
 ├── README.md                            # This file
 ├── src/                                 # Source code
-│   └── TransactionAggregation.Api/     # Web API project
-│       ├── BackgroundServices/          # Background services
-│       ├── Configuration/               # Configuration extensions
-│       ├── Controllers/                 # API controllers
-│       ├── DataSources/                 # Mock data generators
-│       ├── Models/                      # Domain and response models
-│       ├── Queries/                     # Query definitions and handlers
-│       ├── Services/                    # Business logic services
-│       ├── Program.cs                   # Application entry point
-│       ├── Dockerfile                   # Docker configuration
-│       └── appsettings.json            # Application settings
-└── tests/                               # Tests
-    └── TransactionAggregation.Tests/   # Test project
-        ├── UnitTests/                   # Unit tests
-        ├── IntegrationTests/            # Integration tests
-        └── README.md                    # Test documentation
+│   ├── TransactionAggregation.Api/     # Web API project
+│   │   ├── Application/                 # Application layer
+│   │   │   ├── Core/                    # Core domain layer
+│   │   │   │   ├── Entities/            # Domain entities (Transaction, Customer, Category, etc.)
+│   │   │   │   └── Models/              # Domain models and DTOs
+│   │   │   │       ├── ApiResponse.cs
+│   │   │   │       ├── PaginationResponse.cs
+│   │   │   │       ├── ResponseModels.cs
+│   │   │   │       ├── TransactionCategory.cs
+│   │   │   │       └── TransactionSummary.cs
+│   │   │   ├── Features/                # Feature-based organization (Vertical Slices)
+│   │   │   │   ├── Shared/              # Shared feature components
+│   │   │   │   │   └── BaseController.cs
+│   │   │   │   └── Transactions/        # Transaction feature
+│   │   │   │       ├── TransactionsController.cs
+│   │   │   │       ├── Handlers/        # Query and command handlers
+│   │   │   │       └── DataSources/     # Mock data generators
+│   │   │   ├── Middleware/              # HTTP middleware
+│   │   │   │   ├── CorrelationIdMiddleware.cs
+│   │   │   │   ├── GlobalExceptionHandlerMiddleware.cs
+│   │   │   │   └── MiddlewareExtensions.cs
+│   │   │   ├── Services/                # Business logic services
+│   │   │   │   ├── CategorizationService.cs
+│   │   │   │   ├── RuleBasedCategorizer.cs
+│   │   │   │   ├── TransactionAggregationService.cs
+│   │   │   │   └── Workers/             # Background services
+│   │   │   │       ├── DataSeedingService.cs
+│   │   │   │       └── TransactionCategorizationService.cs
+│   │   │   └── Extensions/              # Extension methods
+│   │   │       └── MartenExtensions.cs
+│   │   ├── Docs/                        # Documentation
+│   │   │   ├── implementation-summary.md
+│   │   │   └── Middleware-Summary.md
+│   │   ├── Properties/                  # Launch settings
+│   │   ├── Program.cs                   # Application entry point
+│   │   ├── Dockerfile                   # Docker configuration
+│   │   ├── appsettings.json            # Application settings
+│   │   └── appsettings.Development.json
+│   └── tests/
+│       └── TransactionAggregation.Tests/   # Test project
+│           ├── UnitTests/               # Unit tests
+│           ├── IntegrationTests/        # Integration tests
+│           └── README.md                # Test documentation
 ```
 
 ## Features
@@ -35,8 +62,12 @@ TransactionAggregation/
 - **Auto-Seeding**: Configurable automatic data generation using Bogus library
 - **Transaction Categorization**: Intelligent categorization of transactions into predefined categories
 - **Rich Query API**: Extensive API endpoints for querying and aggregating transaction data
+- **Advanced Search**: Find transactions by multiple fields with flexible filtering
+- **Pagination Support**: Efficient pagination for large datasets
 - **Wolverine Mediator**: Uses Wolverine for CQRS pattern implementation
 - **Consistent Response Model**: All API responses wrapped in `ApiResponse<T>` for consistent error handling
+- **Global Exception Handling**: Centralized error handling with correlation ID tracking
+- **Swagger/OpenAPI**: Interactive API documentation
 - **Comprehensive Testing**: 39 tests covering unit and integration scenarios
 
 ## Tech Stack
@@ -169,45 +200,75 @@ The API will be available at `https://localhost:5001` or `http://localhost:5000`
 
 ## API Endpoints
 
+All endpoints support pagination with query parameters:
+- `pageNumber`: The page number to retrieve (default: 1)
+- `pageSize`: The number of items per page (default: 10)
+
 ### Get All Transactions
 ```http
-GET /api/transactions
+GET /api/transactions?pageNumber=1&pageSize=10
 ```
 Returns all transactions from all data sources with categorization applied.
 
-**Response**: `ApiResponse<TransactionsResponse>`
+**Response**: `ApiResponse<PaginationResponse<Transaction>>`
+
+### Find Transactions
+```http
+POST /api/transactions/find
+Content-Type: application/json
+
+{
+  "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "customerId": "CUST-001",
+  "customerName": "John Doe",
+  "minAmount": 100,
+  "maxAmount": 1000,
+  "startDate": "2024-01-01",
+  "endDate": "2024-12-31",
+  "description": "coffee",
+  "category": "Dining",
+  "source": "BankSystem",
+  "currency": "ZAR",
+  "type": "Debit",
+  "pageNumber": 1,
+  "pageSize": 10
+}
+```
+Search transactions by multiple fields with flexible filtering. At least one filter field is required. Returns paginated results.
+
+**Response**: `ApiResponse<PaginationResponse<Transaction>>`
 
 ### Get Transactions by Customer
 ```http
-GET /api/transactions/customer/{customerId}
+GET /api/transactions/customer/{customerId}?pageNumber=1&pageSize=10
 ```
 Returns all transactions for a specific customer.
 
-**Response**: `ApiResponse<TransactionsResponse>`
+**Response**: `ApiResponse<PaginationResponse<Transaction>>`
 
 ### Get Transactions by Category
 ```http
-GET /api/transactions/category/{category}
+GET /api/transactions/category/{category}?pageNumber=1&pageSize=10
 ```
 Returns all transactions in a specific category.
 
-**Response**: `ApiResponse<TransactionsResponse>`
+**Response**: `ApiResponse<PaginationResponse<Transaction>>`
 
 ### Get Transactions by Date Range
 ```http
-GET /api/transactions/date-range?startDate=2024-01-01&endDate=2024-12-31
+GET /api/transactions/date-range?startDate=2024-01-01&endDate=2024-12-31&pageNumber=1&pageSize=10
 ```
 Returns transactions within the specified date range.
 
-**Response**: `ApiResponse<TransactionsResponse>`
+**Response**: `ApiResponse<PaginationResponse<Transaction>>`
 
 ### Get Transactions by Source
 ```http
-GET /api/transactions/source/{source}
+GET /api/transactions/source/{source}?pageNumber=1&pageSize=10
 ```
 Returns transactions from a specific data source.
 
-**Response**: `ApiResponse<TransactionsResponse>`
+**Response**: `ApiResponse<PaginationResponse<Transaction>>`
 
 ### Get Customer Summary
 ```http
@@ -301,7 +362,24 @@ All API responses are wrapped in the `ApiResponse<T>` model:
   "message": "Operation successful",
   "data": { ... },
   "statusCode": 200,
-  "errors": []
+  "errors": [],
+  "correlationId": "uuid"
+}
+```
+
+### PaginationResponse<T>
+
+Paginated endpoints return data in the following format:
+
+```csharp
+{
+  "items": [],
+  "totalCount": 0,
+  "pageNumber": 1,
+  "pageSize": 10,
+  "totalPages": 0,
+  "hasPreviousPage": false,
+  "hasNextPage": false
 }
 ```
 
@@ -326,13 +404,6 @@ All API responses are wrapped in the `ApiResponse<T>` model:
 }
 ```
 
-### TransactionsResponse
-```csharp
-{
-  "transactions": [],
-  "totalCount": 0
-}
-```
 
 ### TransactionSummary
 ```csharp
@@ -352,15 +423,16 @@ All API responses are wrapped in the `ApiResponse<T>` model:
 
 ## Architecture
 
-The system follows CQRS pattern using Wolverine:
+The system follows CQRS pattern using Wolverine with a feature-based (vertical slice) architecture:
 
 1. **Controllers**: Handle HTTP requests and responses
 2. **Queries**: Define query requests
 3. **Query Handlers**: Process queries and return data from Marten
 4. **Models**: Domain models and response DTOs
-5. **Services**: Business logic (categorization)
+5. **Services**: Business logic (categorization, aggregation)
 6. **Background Services**: Auto-seeding on startup and transaction categorization
 7. **Data Sources**: Mock data generators using Bogus
+8. **Middleware**: Global exception handling and correlation ID tracking
 
 ## Database Schema
 
@@ -427,11 +499,11 @@ See [tests/TransactionAggregation.Tests/README.md](tests/TransactionAggregation.
 
 ### Adding New Categories
 
-Update `TransactionCategory.cs` and add keyword mappings via the database by seeding new `Category` and `CategoryRule` entities in `src/TransactionAggregation.Api/BackgroundServices/DataSeedingService.cs`.
+Update `TransactionCategory.cs` and add keyword mappings via the database by seeding new `Category` and `CategoryRule` entities in `src/TransactionAggregation.Api/Application/Services/Workers/DataSeedingService.cs`.
 
 ### Configuring Data Generation
 
-Modify `src/TransactionAggregation.Api/BackgroundServices/DataSeedingService.cs` to adjust:
+Modify `src/TransactionAggregation.Api/Application/Services/Workers/DataSeedingService.cs` to adjust:
 - Number of transactions per source
 - Customer IDs
 - Date ranges

@@ -8,12 +8,7 @@ namespace TransactionAggregation.Tests.UnitTests;
 
 public class CategorizationServiceTests
 {
-    private readonly ICategorizationService _service;
-
-    public CategorizationServiceTests()
-    {
-        _service = new CategorizationService();
-    }
+    private readonly ICategorizationService _service = new CategorizationService();
 
     [Fact]
     public void CategorizeTransaction_WithGroceryKeyword_ReturnsGroceriesCategory()

@@ -8,20 +8,13 @@ using Xunit;
 namespace TransactionAggregation.Tests.IntegrationTests;
 
 [Collection("Database collection")]
-public class CustomerRepositoryTests
+public class CustomerRepositoryTests(DatabaseFixture fixture)
 {
-    private readonly DatabaseFixture _fixture;
-
-    public CustomerRepositoryTests(DatabaseFixture fixture)
-    {
-        _fixture = fixture;
-    }
-
     [Fact]
     public async Task CanStoreAndRetrieveCustomer()
     {
         // Arrange
-        var serviceProvider = _fixture.CreateServiceProvider();
+        var serviceProvider = fixture.CreateServiceProvider();
         var documentStore = serviceProvider.GetRequiredService<IDocumentStore>();
 
         var customer = new Customer
@@ -54,7 +47,7 @@ public class CustomerRepositoryTests
     public async Task CanQueryCustomerByCustomerId()
     {
         // Arrange
-        var serviceProvider = _fixture.CreateServiceProvider();
+        var serviceProvider = fixture.CreateServiceProvider();
         var documentStore = serviceProvider.GetRequiredService<IDocumentStore>();
 
         var customer = new Customer
@@ -86,20 +79,13 @@ public class CustomerRepositoryTests
 }
 
 [Collection("Database collection")]
-public class CategoryRepositoryTests
+public class CategoryRepositoryTests(DatabaseFixture fixture)
 {
-    private readonly DatabaseFixture _fixture;
-
-    public CategoryRepositoryTests(DatabaseFixture fixture)
-    {
-        _fixture = fixture;
-    }
-
     [Fact]
     public async Task CanStoreAndRetrieveCategory()
     {
         // Arrange
-        var serviceProvider = _fixture.CreateServiceProvider();
+        var serviceProvider = fixture.CreateServiceProvider();
         var documentStore = serviceProvider.GetRequiredService<IDocumentStore>();
 
         var category = new Category
@@ -131,7 +117,7 @@ public class CategoryRepositoryTests
     public async Task CanQueryCategoriesByName()
     {
         // Arrange
-        var serviceProvider = _fixture.CreateServiceProvider();
+        var serviceProvider = fixture.CreateServiceProvider();
         var documentStore = serviceProvider.GetRequiredService<IDocumentStore>();
 
         var categories = new[]
